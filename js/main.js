@@ -6,27 +6,49 @@ const navMenu = document.getElementById('navMenu');
 const contactForm = document.getElementById('contactForm');
 const currentYear = document.getElementById('currentYear');
 const navbar = document.querySelector('.navbar');
-const form = document.getElementById("contactForm");
 const popup = document.getElementById("successPopup");
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+// ===== FORM SUBMISSION (VALIDATION + WEB3FORMS + POPUP) =====
+if (contactForm) {
+  contactForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  const data = new FormData(form);
+    // ===== VALIDATION =====
+    const name = document.getElementById('name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const service = document.getElementById('service').value;
 
-  const response = await fetch(form.action, {
-    method: "POST",
-    body: data,
-    headers: { 'Accept': 'application/json' }
+    if (!name || !email || !service) {
+      alert('Please fill in all required fields.');
+      return;
+    }
+
+    // ===== SEND DATA =====
+    const data = new FormData(contactForm);
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        body: data
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        popup.style.display = "flex"; // ✅ SHOW POPUP
+        contactForm.reset();
+      } else {
+        alert("Submission failed. Try again.");
+      }
+
+    } catch (error) {
+      alert("Something went wrong!");
+    }
   });
+}
 
-  if(response.ok){
-    popup.style.display = "flex";
-    form.reset();
-  } 
-});
-
-function closePopup(){
+// ===== CLOSE POPUP =====
+function closePopup() {
   popup.style.display = "none";
 }
 
@@ -46,29 +68,6 @@ function initMobileNavigation() {
             navMenu.classList.remove('active');
             menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
         });
-    });
-}
-
-// ===== FORM SUBMISSION =====
-function initContactForm() {
-    if (!contactForm) return;
-    
-    contactForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        
-        const name = document.getElementById('name').value;
-        const email = document.getElementById('email').value;
-        const service = document.getElementById('service').value;
-        const message = document.getElementById('message').value;
-        
-        if (!name || !email || !service) {
-            alert('Please fill in all required fields.');
-            return;
-        }
-        
-        console.log('Form submitted:', { name, email, service, message });
-        alert(`Thank you, ${name}! We'll contact you at ${email} within 24 hours.`);
-        contactForm.reset();
     });
 }
 
@@ -101,7 +100,7 @@ function initSmoothScrolling() {
     });
 }
 
-// ===== SERVICES ACCORDION (MOBILE) =====
+// ===== SERVICES ACCORDION =====
 function initServicesAccordion() {
     const serviceCards = document.querySelectorAll('.service-card');
     const isMobile = window.innerWidth <= 767;
@@ -125,8 +124,6 @@ function initServicesAccordion() {
         if (toggleBtn) toggleBtn.classList.remove('active');
         
         header.addEventListener('click', () => {
-            const isActive = content.classList.contains('active');
-            
             serviceCards.forEach(otherCard => {
                 if (otherCard !== card) {
                     const otherContent = otherCard.querySelector('.service-content');
@@ -152,24 +149,8 @@ function initScrollAnimations() {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('animated');
-                
-                if (entry.target.classList.contains('stagger-children')) {
-                    const children = entry.target.querySelectorAll('.animate-on-scroll');
-                    children.forEach((child, index) => {
-                        setTimeout(() => {
-                            child.classList.add('animated');
-                        }, index * 100);
-                    });
-                }
             } else {
                 entry.target.classList.remove('animated');
-                
-                if (entry.target.classList.contains('stagger-children')) {
-                    const children = entry.target.querySelectorAll('.animate-on-scroll');
-                    children.forEach(child => {
-                        child.classList.remove('animated');
-                    });
-                }
             }
         });
     }, {
@@ -177,15 +158,7 @@ function initScrollAnimations() {
         rootMargin: '50px'
     });
     
-    animatedElements.forEach(element => {
-        if (!element.parentElement.classList.contains('stagger-children')) {
-            observer.observe(element);
-        }
-    });
-    
-    document.querySelectorAll('.stagger-children').forEach(container => {
-        observer.observe(container);
-    });
+    animatedElements.forEach(element => observer.observe(element));
 }
 
 // ===== HERO ANIMATIONS =====
@@ -198,7 +171,7 @@ function initHeroAnimations() {
     });
 }
 
-// ===== SERVICE CARD HOVER EFFECTS =====
+// ===== HOVER EFFECT =====
 function initServiceCardHover() {
     document.querySelectorAll('.service-card').forEach(card => {
         card.addEventListener('mouseenter', function() {
@@ -215,7 +188,7 @@ function initServiceCardHover() {
     });
 }
 
-// ===== FORM INPUT VALIDATION =====
+// ===== FORM INPUT VALIDATION (UI) =====
 function initFormValidation() {
     document.querySelectorAll('.form-group input, .form-group select, .form-group textarea').forEach(input => {
         input.addEventListener('blur', function() {
@@ -225,29 +198,22 @@ function initFormValidation() {
                 this.style.borderColor = this.checkValidity() ? '#4CAF50' : '#FFD700';
             }
         });
-        
-        input.addEventListener('input', function() {
-            if (this.value.trim() !== '') {
-                this.style.borderColor = '#FFD700';
-            }
-        });
     });
 }
 
-// ===== UTILITY FUNCTIONS =====
+// ===== UTILITY =====
 function setCurrentYear() {
     if (currentYear) {
         currentYear.textContent = new Date().getFullYear();
     }
 }
 
-// ===== INITIALIZE ALL FEATURES =====
+// ===== INIT =====
 function initAllFeatures() {
     setCurrentYear();
     initMobileNavigation();
     initSmoothScrolling();
-    initContactForm();
-    initFormValidation();
+    initFormValidation(); // keep validation UI
     initHeroAnimations();
     initScrollAnimations();
     initServicesAccordion();
@@ -256,10 +222,9 @@ function initAllFeatures() {
     console.log('Limelite Website Initialized');
 }
 
-// ===== WINDOW LOAD EVENT =====
 window.addEventListener('load', initAllFeatures);
 
-// ===== RESIZE HANDLER =====
+// ===== RESIZE =====
 let resizeTimeout;
 window.addEventListener('resize', () => {
     clearTimeout(resizeTimeout);
